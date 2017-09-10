@@ -7,7 +7,7 @@
     <title>menu</title>
    <base id="base" href="${contextPath}">  
    <#include "/common/common.ftl">
-   <script type="text/javascript"  charset="GBK">
+   <script type="text/javascript"  charset="UTF-8">
    var searchUrl = "${contextPath}/menu/list/data";
    var updateUrl = "${contextPath}/departments/update.do";
    var insertUrl = "${contextPath}/departments/insert.do";
@@ -33,18 +33,15 @@
 	        columns:[[   
                    		{field:'id',title:'菜单编号',width:100,align:'center'},
                    		{field:'menuName',title:'菜单名称',width:100,align:'center'},
-                   		{field:'parent',title:'父菜单',width:100,align:'center'},
+                   		{field:'parent',title:'父菜单',width:100,align:'center',formatter:function(cellvalue, options, rowObject){
+                   			return cellvalue.menuName;
+                   		}},
                    		{field:'link',title:'连接',width:200,align:'center'},
                    		{field:'menuDesc',title:'描述',width:300,align:'center'},
                    		{field:'order',title:'序号',width:100,align:'center'},
                    		{field:'icon',title:'图标',width:100,align:'center'}
 	        ]],
-	        onLoadSuccess:function(data){
-	    		data = convertJson(data);
-	        	if(data.result!='ok'){
-	        		showBox("提示信息",data.errorMsg,'warning');
-	        	}
-	        },
+	        
 	         onBeforeLoad: function (params) {
 			      params.pageSize = params.rows
 			      params.currentPage = params.page
@@ -82,7 +79,7 @@
 				菜单名称:
 				<input type="text" id="menuName" name="menuName"/>
 				父菜单名称:
-				<input type="text" id="pmenuName" name="pmenuName"/>
+				<input type="text" id="pmenuName" name="parent.menuName"/>
 				<input type="button" onclick="loadList(1);" value="查询"/>
 			</form>
 		</div>

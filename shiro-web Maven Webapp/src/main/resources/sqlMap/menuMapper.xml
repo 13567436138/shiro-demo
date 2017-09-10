@@ -7,7 +7,16 @@
     	<result column="menuName" property="menuName"/>
     	<result column="menuDesc" property="menuDesc"/>
     	<result column="link" property="link"/>
-    	<result column="icon" property="icon"/>
+    	<result column="order" property="order"/>
+    </resultMap>
+    <resultMap type="Menu" id="menuWithParentMap" extends="menuMap">
+    	<association property="parent" javaType="com.mark.demo.shiro.entity.Menu" column="pid">
+    		<result column="pid" property="id"/>
+	    	<result column="p_menuName" property="menuName"/>
+	    	<result column="p_menuDesc" property="menuDesc"/>
+	    	<result column="p_link" property="link"/>
+	    	<result column="p_order" property="order"/>
+    	</association>
     </resultMap>
     
     <select id="getMenuTopLever"  resultMap="menuMap" useCache="true">
@@ -20,22 +29,27 @@
     	update menu set menuName=#{menuName} where menuId=#{id}
     </update>
     
-    <select id="findList" parameterType="Menu" resultMap="menuMap">
-    	select * from menu 
+    <select id="findList" parameterType="Menu" resultMap="menuWithParentMap">
+    	select 
+    		a.*,
+    		p.menuName as p_menuName,
+    		p.menuDesc as p_menuDesc,
+    		p.link as p_link,
+    		p.`order` as p_order
+    		
+    	 		from menu a left join menu p on a.pid=p.menuId
+    	 	
     	<where>
+    		1=1
     		<if test="menuName!=null ">
-	    		menuName like '${menuName}*'
+	    		and a.menuName like '${menuName}%'
+	    	</if>
+	    	<if test="parent!=null and parent.menuName!=null and parent.menuName!=''">
+	    		and p.menuName like '${parent.menuName}%'
 	    	</if>
     	</where> 
     	
     </select>
-    <select id="count" parameterType="Menu" resultType="Long">
-    	select count(*) from menu 
-    	<where>
-    		<if test="menuName!=null ">
-	    		menuName like '${menuName}*'
-	    	</if>
-    	</where> 
-    </select>
+    
 </mapper>
 

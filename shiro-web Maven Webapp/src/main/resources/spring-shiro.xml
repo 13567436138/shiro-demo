@@ -125,8 +125,8 @@
         <property name="globalSessionTimeout" value="1800000"/>
         <property name="sessionValidationInterval" value="120000"/>
         <property name="sessionValidationSchedulerEnabled" value="true"/>
-        <property name="sessionIdCookie" ref="sessionIdCookie"/>
-        <property name="sessionIdCookieEnabled" value="true"/>
+        <!-- <property name="sessionIdCookie" ref="sessionIdCookie"/>
+        <property name="sessionIdCookieEnabled" value="true"/> -->
     </bean>
 
     <!-- rememberMe管理器 -->
@@ -141,7 +141,7 @@
         <property name="rememberMeManager" ref="rememberMeManager"/>
         <property name="sessionManager" ref="sessionManager"/>
         <property name="cacheManager" ref="shiroCacheManager"/>
-        <property name="sessionMode" value="http"></property>
+        
     </bean>
 
     <!-- 相当于调用SecurityUtils.setSecurityManager(securityManager) -->

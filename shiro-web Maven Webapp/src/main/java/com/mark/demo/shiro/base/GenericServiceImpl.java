@@ -66,7 +66,7 @@ public abstract class GenericServiceImpl<T extends GenericEntity> implements Gen
     public PaginateResult<T> findPage(Pagination page, T entity) {
         entity.setPagination(page);
         PaginateResult<T> pageResult = new PaginateResult<T>(page, dao.findList(entity));
-        pageResult.setTotal(dao.count(entity));
+        pageResult.setTotal(page.getTotalCount());
         return pageResult;
     }
 }

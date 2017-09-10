@@ -212,3 +212,102 @@ function tabCloseEven()
 function msgShow(title, msgString, msgType) {
 	$.messager.alert(title, msgString, msgType);
 }
+
+
+//加载系统配置文件设置列表
+function loadList(pageNumber, searchForm, datagridId, pageSize) {
+	if (isEmpty(searchForm)) {
+		searchForm = 'searchForm';
+	}
+	if (isEmpty(datagridId)) {
+		datagridId = 'dataList';
+	}
+	var pager = $('#' + datagridId).datagrid('getPager');
+	var rows = pager.pagination('options').pageSize;
+	if (!isEmpty(pageSize)) {
+		rows = pageSize;
+		
+	}
+	var searchP = getFormJson(searchForm);
+
+	$(searchP).attr('pageSize', rows);
+	$(searchP).attr('currentPage', pageNumber);
+	/*var url = $('#' + datagridId).datagrid("options").url;
+	if (isEmpty(url)) {
+		url = searchUrl;
+	}*/
+	$('#' + datagridId).datagrid('load',searchP);
+	/*$.post(url, searchP, function(response) {
+		response = convertJson(response);
+		refreshDatagrid(datagridId, pageNumber, pageSize);
+		$('#' + datagridId).datagrid('loadData', response);
+	});*/
+}
+
+/**
+ * 刷新DataGrid
+ */
+function refreshDatagrid(dgid,pageNumber,pageSize){
+	$('#'+dgid).datagrid('options').pageNumber = pageNumber;
+	if(isEmpty(pageSize)){
+		$('#'+dgid).datagrid('getPager').pagination({pageNumber:pageNumber});
+	}else{
+		$('#'+dgid).datagrid('options').pageSize=pageSize;
+		$('#'+dgid).datagrid('getPager').pagination({pageNumber:pageNumber,pageSize:pageSize});
+	}
+	
+}
+
+/**
+ * 判断是否为空
+ * @param exp
+ * @returns {Boolean}
+ */
+function isEmpty(exp){
+	var bl = false;
+	if (typeof exp === "undefined" )
+	{
+		bl = true;
+	}else if(typeof exp === "string" && !exp){
+		bl = true;
+	}
+	
+	return bl;
+}
+
+/**
+ * 合并数组
+ * @param result
+ * @param src
+ * @returns
+ */
+function extend(result,src){
+		$(src).each(function(index,row){
+			 $(result).attr(row.name,row.value);
+		})
+	   return result;
+	}
+
+
+function getFormJson(formId){
+	var data = $("#"+formId).serializeArray();
+	var result = {};
+	extend(result,data);
+	return result;
+}
+
+/**
+ * 提示框
+ * @returns
+ */
+var showBox = function (title,content,m_type,id){
+	$.messager.alert(title,content,m_type,function(){
+		if(!isEmpty(id)){
+			$("#"+id).focus();
+		}
+	});
+};
+
+function closeWindow(id){
+	$("#"+id).window("close");
+}

@@ -151,6 +151,7 @@ public class SQLHelper
     {
         if (dialect.supportsLimit())
         {
+        	page.setStartIndex((page.getCurrentPage()-1)*page.getPageSize());
             return dialect.getLimitString(sql, page.getStartIndex(), page.getPageSize());
         }
         else
