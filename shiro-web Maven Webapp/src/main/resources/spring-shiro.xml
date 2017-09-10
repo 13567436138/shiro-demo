@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+       http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <description>Shiro安全配置</description>
+	<context:property-placeholder ignore-unresolvable="true" location="classpath:cookie.properties"/>
+    
+    <!-- Shiro权限过滤过滤器定义 -->
+    <bean name="shiroFilterChainDefinitions" class="java.lang.String">
+        <constructor-arg>
+            <value>
+                /error/** = anon,exec
+                /client/** = anon,exec
+                /styles/** = anon,exec
+                /images/** = anon,exec
+                /scripts/** = anon,exec
+                /pay/back/** = anon,exec
+                /video/** = anon,exec
+                /upload/** = anon,exec
+                /uploads/** = anon,exec
+                /fonts/** = anon,exec
+                /getAuthPrice/** = anon,exec
+                /common/login/submitlogin=authc,exec
+                /common/login/** = anon,exec
+                /common/showImg/** = anon,exec
+                /common/showFile/** = anon,exec
+                /brand/brandImage/** = anon,exec
+                /common/orderPayCallback/** = anon,exec
+                /common/dealerShoper/** = anon,exec
+                /common/crmLogin/** = anon,exec
+                /common/register/** = anon,exec
+                /common/suggestion/** = anon,exec
+                /common/forgotpass/** = anon,exec
+                /menu/** = authc,exec
+                /brand/** = authc,exec
+                /common/** = authc,exec
+            </value>
+        </constructor-arg>
+    </bean>
+
+    <!-- 安全认证过滤器 -->
+    <bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+        <property name="securityManager" ref="securityManager"/>
+        <property name="loginUrl" value="/common/login"/>
+        <property name="unauthorizedUrl" value="/error/403"/>
+        <property name="successUrl" value="/admins/indexed/index"></property>
+        <property name="filters">
+            <map>
+                <entry key="exec">
+                    <bean class="com.mark.demo.shiro.security.filter.SimpleExecutiveFilter"/>
+                </entry>
+                <entry key="authc">
+                    <bean class="com.mark.demo.shiro.security.filter.AuthenticationFilter">
+                        <property name="rememberMeParam" value="rememberMe"/>
+                    </bean>
+                </entry>
+                <entry key="roles">
+                    <bean class="org.apache.shiro.web.filter.authz.RolesAuthorizationFilter"/>
+                </entry>
+            </map>
+        </property>
+        <property name="filterChainDefinitions">
+            <value>
+                /js/** = anon,exec
+                /css/** = anon,exec
+                /video/** = anon,exec
+                /upload/** = anon,exec
+                /uploads/** = anon,exec
+                /fonts/** = anon,exec
+                /getAuthPrice/** = anon,exec
+                /common/login/** = anon,exec
+                /common/forgotpass/** = anon,exec
+                /menu/** = authc,exec
+                /brand/** = authc,exec
+                /common/** = authc,exec
+                /admins/** = authc,exec
+            </value>
+        </property>
+    </bean>
+
+    <!-- 定义授权缓存管理器 -->
+    <bean id="shiroCacheManager" class="com.mark.demo.shiro.security.cache.RedisCacheManager"/>
+    <!-- 保证实现了Shiro内部lifecycle函数的bean执行 -->
+    <bean id="lifecycleBeanPostProcessor" class="org.apache.shiro.spring.LifecycleBeanPostProcessor"/>
+    <!-- SHIRO 认证匹配 -->
+    <bean id="userCredentialsMatcher" class="com.mark.demo.shiro.security.UserCredentialsMatcher"/>
+
+    <!-- 系统安全认证 -->
+    <bean id="userAuthorizingRealm" class="com.mark.demo.shiro.security.MysqlRealm">
+        <property name="credentialsMatcher" ref="userCredentialsMatcher"/>
+        <property name="sessionDAO" ref="sessionDAO"/>
+        <property name="userMapper" ref="userMapper"></property>
+    </bean>
+
+    <!-- 自定义会话 -->
+    <bean id="sessionDAO" class="com.mark.demo.shiro.security.session.RedisSessionDAO">
+        <property name="sessionIdGenerator">
+            <bean class="com.mark.demo.shiro.security.utils.IdGen"/>
+        </property>
+    </bean>
+
+    <!-- 指定本系统SESSIONID, 默认为: JSESSIONID -->
+    <bean id="sessionIdCookie" class="org.apache.shiro.web.servlet.SimpleCookie">
+        <constructor-arg name="name" value="${cookie.session}"/>
+        <property name="domain" value="${cookie.domain}"/>
+        <property name="path" value="${cookie.path}"/>
+        <property name="httpOnly" value="true"/>
+    </bean>
+
+    <!-- 指定本系统REMEMBERID -->
+    <bean id="rememberMeCookie" class="org.apache.shiro.web.servlet.SimpleCookie">
+        <constructor-arg name="name" value="${cookie.remember}"/>
+        <property name="domain" value="${cookie.domain}"/>
+        <property name="path" value="${cookie.path}"/>
+        <property name="httpOnly" value="true"/>
+        <property name="maxAge" value="2592000"/>
+    </bean>
+
+    <!-- 自定义会话管理配置 -->
+    <bean id="sessionManager" class="org.apache.shiro.web.session.mgt.DefaultWebSessionManager">
+        <property name="sessionDAO" ref="sessionDAO"/>
+        <property name="globalSessionTimeout" value="1800000"/>
+        <property name="sessionValidationInterval" value="120000"/>
+        <property name="sessionValidationSchedulerEnabled" value="true"/>
+        <property name="sessionIdCookie" ref="sessionIdCookie"/>
+        <property name="sessionIdCookieEnabled" value="true"/>
+    </bean>
+
+    <!-- rememberMe管理器 -->
+    <bean id="rememberMeManager" class="org.apache.shiro.web.mgt.CookieRememberMeManager">
+        <property name="cipherKey" value="#{T(org.apache.shiro.codec.Base64).decode('4AvVhmFLUs0KTA3Kprsdag==')}"/>
+        <property name="cookie" ref="rememberMeCookie"/>
+    </bean>
+
+    <!-- 定义Shiro安全管理配置 -->
+    <bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+        <property name="realm" ref="userAuthorizingRealm"/>
+        <property name="rememberMeManager" ref="rememberMeManager"/>
+        <property name="sessionManager" ref="sessionManager"/>
+        <property name="cacheManager" ref="shiroCacheManager"/>
+        <property name="sessionMode" value="http"></property>
+    </bean>
+
+    <!-- 相当于调用SecurityUtils.setSecurityManager(securityManager) -->
+    <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="staticMethod" value="org.apache.shiro.SecurityUtils.setSecurityManager"/>
+        <property name="arguments" ref="securityManager"/>
+    </bean>
+
+</beans>
