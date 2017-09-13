@@ -9,7 +9,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.ibatis.cache.Cache;
 import org.apache.ibatis.io.Resources;
 import org.apache.ibatis.parsing.XNode;
 import org.apache.ibatis.parsing.XPathParser;
@@ -46,7 +45,7 @@ public class RedisCachingManagerImpl implements RedisCachingManager{
 			Set<String> relatedStatements = observers.get(observable);
 			for(String statementId:relatedStatements)
 			{
-				JedisUtils.removeMapField(MyBatisRedisCache.mybatis_cache_prefix, statementId);
+				JedisUtils.del(MyBatisRedisCache.mybatis_cache_prefix+statementId);
 			}
 		}
 	}

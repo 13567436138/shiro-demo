@@ -6,7 +6,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.ibatis.cache.Cache;
 import org.apache.ibatis.cache.CacheKey;
-import org.apache.ibatis.cache.CacheKey;
 
 import com.mark.demo.shiro.utils.JedisUtils;
 import com.mark.demo.shiro.utils.ObjectUtils;
@@ -46,21 +45,24 @@ public class MyBatisRedisCache implements Cache,Serializable{
 		CacheKey cacheKey=(CacheKey)key;
 		String [] keyAry=cacheKey.toString().split(":");
 		String myKey=keyAry[2];
-	    JedisUtils.setMapField(mybatis_cache_prefix, ObjectUtils.serialize(myKey), value);
+	    JedisUtils.setMapField(mybatis_cache_prefix+myKey, cacheKey.toString().getBytes(), value);
 	}
 	@Override
 	public Object getObject(Object key) {
 		CacheKey cacheKey=(CacheKey)key;
 		String [] keyAry=cacheKey.toString().split(":");
 		String myKey=keyAry[2];
-	    return JedisUtils.getMapFiled(mybatis_cache_prefix, ObjectUtils.serialize(myKey));
+	    return JedisUtils.getMapFiled(mybatis_cache_prefix+myKey, cacheKey.toString().getBytes());
 	    
 	}
 
 	@Override
 	public Object removeObject(Object key) {
-	    Object ret=JedisUtils.getMapFiled(mybatis_cache_prefix, ObjectUtils.serialize(key));
-		JedisUtils.removeMapField(mybatis_cache_prefix, ObjectUtils.serialize(key));
+		CacheKey cacheKey=(CacheKey)key;
+		String [] keyAry=cacheKey.toString().split(":");
+		String myKey=keyAry[2];
+	    Object ret=JedisUtils.getMapFiled(mybatis_cache_prefix+myKey, ObjectUtils.serialize(key));
+		JedisUtils.removeMapField(mybatis_cache_prefix+myKey, ObjectUtils.serialize(key));
 		return ret;
 	}
 
