@@ -9,7 +9,7 @@ public abstract class GenericServiceImpl<T extends GenericEntity> implements Gen
     /**
      * 持久层对象
      */
-    @Autowired
+    
     protected GenericMapper<T> dao;
 
     protected GenericServiceImpl(GenericMapper<T> dao){
