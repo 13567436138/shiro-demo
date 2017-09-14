@@ -40,7 +40,7 @@ function convertJson(data){
 
 function InitLeftMenu(dataTree) {
 	var path=document.getElementById("base").href;
-	$("#nav").accordion({animate:false});
+	$("#nav" ).accordion();
     $.each(dataTree, function(i, n) {
     	$.ajax({
     		  type: 'POST',
@@ -310,4 +310,333 @@ var showBox = function (title,content,m_type,id){
 
 function closeWindow(id){
 	$("#"+id).window("close");
+}
+
+function delError() {
+	$('span[id$="Error"]').remove();
+}
+
+/**
+ * 判断是否为方法
+ * @param exp
+ * @returns {Boolean}
+ */
+function isFunction(exp) {
+	var bl = false;
+	if (typeof (exp) == "function") {
+		bl = true;
+	}
+
+	return bl;
+}
+
+/**
+ * 显示新增界面
+ * @param preHandler,afHandler,insertHandler,clearHandler,title,url
+ * @return
+ */
+function showAddwindow(jsonParam){
+	jsonParam=jsonParam||{};
+	$('#addForm')[0].reset(); 
+	$('#addwindow').removeAttr("disabled","disabled");
+	$('#addwindow input').removeAttr("readonly");
+	delError();
+	jsonParam.title=isEmpty(jsonParam.title)?$('#addwindow').attr('title'):jsonParam.title;
+	//新增前处理
+	if(typeof jsonParam.preHandler  === "function") jsonParam.preHandler();
+	
+	initDlg('#addwindow').dialog({title:jsonParam.title,buttons:[{
+			text:'保存',
+			iconCls:'icon-ok',
+			handler:function(){
+               //确定按钮点击后的具体处理函数
+				if (isFunction(jsonParam.insertHandler))
+				{	
+					jsonParam.insertHandler(jsonParam);
+				}else{
+					_insertHandler(jsonParam.url);
+				}
+				
+			}
+		},{
+			text:'取消',
+			iconCls:'icon-cancel',
+			handler:function(){
+				//取消前处理
+				if(typeof jsonParam.clearHandler  === "function") 
+					jsonParam.clearHandler();
+				else
+					$('#addwindow').dialog('close');
+			}
+		}]});
+	//新增后处理
+	if(isFunction(jsonParam.afHandler)) jsonParam.afHandler(jsonParam);
+	$('#addwindow').dialog('open');
+}
+
+var _insertHandler = function(url) {
+	$('#addForm').form.url = url || insertUrl; //表单提交路径
+	submitForm("addForm", $('#addForm').form.url, function(data) {
+		data = convertJson(data);
+		if (data.result == "ok") {
+			$('#addForm').form('clear'); // 清空form
+			$('#dataList').datagrid('clearSelections');//清空选择
+			$('#addwindow').dialog('close');
+			showBox("提示信息", "保存成功", 'info');
+			var pageNumber = $('#dataList').datagrid('getPager').data(
+					"pagination").options.pageNumber;
+			loadList(pageNumber);
+			$('#addwindow').dialog('close');
+		} else {
+			showError(data);
+			//showBox("提示信息",data.result,'warning');
+		}
+	});
+}
+
+function showError(data) {
+	var bl = false;
+	var errors = data.error;
+	if (!isEmpty(errors)) {
+		var i = 0;
+		$(errors).each(
+				function(index, error) {
+					$('#' + error.field + 'Error').remove();
+					var field = $('#' + error.field);
+					if (isEmpty(field.lenght) || field.lenght == 0) {
+						if (i == 0) {
+							showBox("提示信息", error.msg, 'warning');
+						}
+						i++;
+					} else
+						field.after("<span id='" + error.field + 'Error'
+								+ "' style='color:red'>" + error.msg
+								+ "</span>");
+				});
+		$('#' + errors[0].field + 'Error').focus();
+		bl = true;
+	}
+	if (!isEmpty(data.errorMsg)) {
+		showBox("提示信息", data.errorMsg, 'warning');
+		bl = true;
+	}
+	return bl;
+}
+
+/**
+ * 
+ * @param url 删除的url
+ * @param id  删除的条件
+ */
+function delRowData(jsonParam) {
+	jsonParam = jsonParam || {};
+	jsonParam.url = isEmpty(jsonParam.url) ? deleteUrl : jsonParam.url;
+	var rows = $('#dataList').datagrid("getSelections");
+	if (rows.length == 0) {
+		$.messager.alert('提示框', '请选择要删除的数据', 'warning');
+	} else {
+		var ids = "";
+		for ( var i = 0; i < rows.length; i++) {
+			ids += $(rows[i]).attr(jsonParam.id) + ",";
+		}
+		var _param = convertJson('{\"' + jsonParam.id + 's\":\"' + ids + '\"}');
+		Confirm('是否删' + rows.length + '条数据！', function() {
+			var _param = convertJson('{\"' + jsonParam.id + 's\":\"' + ids
+					+ '\"}');
+			$.post(jsonParam.url, _param, function(data) {
+				data = convertJson(data);
+				if (data.result == 'ok') {
+					$.messager.alert('提示框', '删除成功', 'info');
+					$('#dataList').datagrid("reload");
+					$('#dataList').datagrid("clearChecked");
+				} else {
+					showError(data);
+				}
+
+			});
+		});
+	}
+}
+
+//确认框   
+function Confirm(msg, control) {
+	$.messager.confirm("确认", msg, function(r) {
+		if (r) {
+			control();
+		}
+	});
+}
+
+/**
+ * jsonParam 中的参数有 updateUrl,updateHandler,preHandler,afHandler,readonlyFields
+ * @param jsonParam
+ * @return
+ */
+function showUpdate(jsonParam) {
+	jsonParam = jsonParam || {};
+	jsonParam.updateUrl = isEmpty(jsonParam.updateUrl) ? updateUrl
+			: jsonParam.updateUrl;
+	jsonParam.title = isEmpty(jsonParam.title) ? $('#addwindow').attr('title')
+			: jsonParam.title;
+	delError();
+	var rows = $('#dataList').datagrid("getSelections");
+	if (rows.length == 0) {
+		$.messager.alert('提示框', '请选择修改数据', 'warning');
+		return;
+	}
+	if(rows.length!=1){
+		$.messager.alert('提示框', '请选择一条修改数据', 'warning');
+		return;
+	}
+	var data = rows[0];
+	$(jsonParam).attr('data', data);
+	//更新前处理
+	if (isFunction(jsonParam.preHandler))
+		jsonParam.preHandler(jsonParam);
+	else
+		setFormValue("addForm", data);
+	setReadonly(jsonParam.readonlyFields);
+
+	var validateName = $('#addForm').attr('updateValidate');
+	initDlg('#addwindow').dialog( {
+		title : jsonParam.title,
+		buttons : [ {
+			text : '提交',
+			iconCls : 'icon-ok',
+			handler : function() {
+				//若form中绑定了检查方法，则先执行检查
+				if(!isEmpty(validateName)){
+						var fc = eval(validateName);
+						var checkResult = fc.call();
+						if(!checkResult){
+							return checkResult;
+						}
+					}
+				//确定按钮点击后的具体处理函数
+			if (isFunction(jsonParam.updateHandler)) {
+				jsonParam.updateHandler(jsonParam);
+			} else{
+				doEdit(jsonParam.updateUrl);
+			}
+
+		}
+		}, {
+			text : '取消',
+			iconCls : 'icon-cancel',
+			handler : function() {
+				$("#addForm")[0].reset();
+				$('#addwindow').dialog('close');
+			}
+		} ]
+	});
+	//新增后处理
+	if (isFunction(jsonParam.afHandler))
+		jsonParam.afHandler(jsonParam);
+	$('#addwindow').dialog('open');
+
+}
+
+function setReadonly(readonlyFields) {
+	if (!isEmpty(readonlyFields)) {
+		$.each(readonlyFields, function(key, value) {
+			$("#addForm").find('#' + value).attr('readonly', 'readonly');
+			$("#addForm").find('#' + value).css('background-color','#CCCCCC');
+		});
+	}
+
+}
+
+function setFormValue(_data) {
+	$.each(_data, function(key, value) {
+		$('#' + key).val(value);
+		$('[name=' + key + ']').val(value);
+	});
+}
+
+function setFormValue(formId, _data) {
+	$.each(_data, function(key, value) {
+			_setValue($('#' + formId).find("#" + key), value)
+			_setValue($('#' + formId).find('[name=' + key + ']'), value)
+		});
+}
+
+function _setValue(_temp, value) {
+	if (!isEmpty(_temp)) {
+		_temp.val(value);
+		if (!isEmpty(_temp.attr('constantId'))) {
+			_temp.combobox('setValue', value);
+		} else if (_temp.hasClass('easyui-datebox')) {
+			_temp.datebox('setValue', value);
+		}
+	}
+}
+
+//修改系统配置文件设置
+function doEdit(url) {
+	if (url)
+		$('#addForm').form.url = url; //表单提交路径
+	submitForm("addForm", $('#addForm').form.url, function(data) {
+		//eval('data='+data); 
+			data = convertJson(data);
+			if (data.result == "ok") {
+				$('#addDlg').dialog('close');
+				showBox("提示信息", "修改成功", 'info');
+				var pageNumber = $('#dataList').datagrid('getPager').data(
+						"pagination").options.pageNumber;
+				loadList(pageNumber);
+				$('#addwindow').dialog('close');
+			} else {
+				//showBox("提示信息",data.result,'warning');
+			showError(data);
+		}
+	});
+}
+
+
+/**
+ * 表单提交
+ * 
+ */
+function submitForm(formId, url, handler) {
+	// 判断当前操作表单提交action
+	var t_handler = handler || function() {
+	};
+	var cmitUrl = url;
+
+	$('#' + formId).form('submit', {
+		url : cmitUrl,
+		onSubmit : function() { // 提交前的验证				
+			//valiDateCss(true);//初始化验证框
+		return $(this).form('validate');
+	},
+	success : function(data) {
+		if (typeof t_handler === "function") {
+			t_handler(data);
+		}
+	}
+	});
+}
+
+
+//初始化添加dlg
+function initDlg(dlgId) {
+	$(dlgId).dialog( {
+		title : "",
+		closable : true,
+		closed : true,
+		modal : true,
+		buttons : [ {
+			text : '确定',
+			iconCls : 'icon-ok',
+			handler : function() {
+			}
+		}, {
+			text : '取消',
+			iconCls : 'icon-cancel',
+			handler : function() {
+			}
+		} ]
+	});
+
+	return $(dlgId);
 }
