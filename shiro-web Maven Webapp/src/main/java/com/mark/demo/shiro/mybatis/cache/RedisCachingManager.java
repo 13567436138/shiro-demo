@@ -18,8 +18,6 @@ import org.apache.ibatis.cache.Cache;
  * 该管理器维护着MyBatis所有的查询所产生的CacheKey集合，当有update 操作执行时，会根据此update操作对应的StatementId，查看此StatementId是否指定了要刷新的查询缓存，然后指定此
  * 
  * 
- * @author louluan
- * @date   2014-12-5
  */
 public interface RedisCachingManager {
 	
